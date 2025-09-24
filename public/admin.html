@@ -1,31 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>Admin Panel - Art Gallery</title>
-<link rel="stylesheet" href="/css/admin.css">
+  <meta charset="UTF-8" />
+  <title>Admin Panel - Art Gallery</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/css/admin.css" />
 </head>
 <body>
-<header>
-  <h1>🛠 Admin Panel</h1>
-  <a href="/" class="btn">Back to Gallery</a>
-</header>
+  <header>
+    <h1>🛠 Admin Panel</h1>
+    <nav>
+      <a href="/" class="btn">Back to Gallery</a>
+    </nav>
+  </header>
 
-<section class="add-image">
-  <h2>Add New Image</h2>
-  <form id="formAdd" enctype="multipart/form-data">
-    <input type="text" name="name" placeholder="Image Name" required>
-    <input type="text" name="description" placeholder="Description">
-    <input type="file" name="image_file" required>
-    <button type="submit">Add Image</button>
-  </form>
-</section>
+  <section class="toolbar">
+    <form id="formAdd" class="add-form" enctype="multipart/form-data">
+      <input type="text" name="name" placeholder="Image Name" required />
+      <input type="text" name="description" placeholder="Description (optional)" />
+      <input type="file" name="image_file" accept="image/*" required />
+      <button type="submit" class="btn grad">Add Image</button>
+    </form>
 
-<section class="image-list">
-  <h2>Image List</h2>
-  <div id="cardsContainer" class="cards-container"></div>
-</section>
+    <div class="tools">
+      <input type="search" id="searchBox" placeholder="Search by name/desc..." />
+      <button id="refreshBtn" class="btn">Refresh</button>
+      <button id="exportBtn" class="btn ghost">Export CSV</button>
+      <span class="metric" id="statTotal">0 posts</span>
+    </div>
+  </section>
 
-<script src="/js/admin.js"></script>
+  <section class="image-list">
+    <div id="cardsContainer" class="cards-container"></div>
+  </section>
+
+  <!-- Edit Modal -->
+  <div class="modal" id="editModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog">
+      <button class="modal__close" data-close>&times;</button>
+      <h2>Edit Post</h2>
+      <form id="editForm">
+        <input type="hidden" name="id" />
+        <label>Title</label>
+        <input type="text" name="name" required />
+        <label>Description</label>
+        <input type="text" name="description" />
+        <button class="btn grad" type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
 </body>
 </html>

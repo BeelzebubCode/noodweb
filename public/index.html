@@ -1,18 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>Art Gallery</title>
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8" />
+  <title>Art Gallery</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-<header>
-  <h1>🎨 Art Gallery</h1>
-  <a href="/admin" class="btn">Admin Panel</a>
-</header>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">🎨</span>
+      <h1>Art Gallery</h1>
+    </div>
+    <nav class="nav-actions">
+      <a href="/admin" class="btn btn-glow">Admin Panel</a>
+    </nav>
+  </header>
 
-<main id="images" class="gallery"></main>
+  <main class="feed-wrap">
+    <section class="feed-grid" id="images"></section>
+  </main>
 
-<script src="/js/main.js"></script>
+  <!-- Modal: View Post -->
+  <div class="modal" id="postModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal__close" title="Close" data-close-modal>&times;</button>
+      <div class="modal__body">
+        <div class="modal__image">
+          <img id="modalImage" alt="">
+        </div>
+        <div class="modal__content">
+          <h2 id="modalTitle"></h2>
+          <p id="modalDesc" class="muted"></p>
+
+          <div class="meta-row">
+            <span id="modalTime" class="chip"></span>
+            <span id="modalViews" class="chip"></span>
+            <button id="modalLikeBtn" class="chip like-btn">👍 <span id="modalLikes">0</span></button>
+          </div>
+
+          <div class="comment-section">
+            <h3>Comments</h3>
+            <div class="comment-list" id="modalComments"></div>
+            <form class="comment-form" id="modalCommentForm">
+              <input type="text" name="username" placeholder="Your name" required />
+              <input type="text" name="content" placeholder="Add a comment..." required />
+              <button type="submit" class="btn btn-glow">Post</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
 </body>
 </html>
