@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel - Art Gallery</title>
+<link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<header>
+  <h1>🛠 Admin Panel</h1>
+  <a href="/" class="btn">Back to Gallery</a>
+</header>
+
+<section class="add-image">
+  <h2>Add New Image</h2>
+  <form id="formAdd" enctype="multipart/form-data">
+    <input type="text" name="name" placeholder="Image Name" required>
+    <input type="text" name="description" placeholder="Description">
+    <input type="file" name="image_file" required>
+    <button type="submit">Add Image</button>
+  </form>
+</section>
+
+<section class="image-list">
+  <h2>Image List</h2>
+  <div id="cardsContainer" class="cards-container"></div>
+</section>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>
