@@ -1,21 +1,23 @@
 const grid = document.getElementById('images');
 
-// Modal refs
-const modal = document.getElementById('postModal');
-const modalImg = document.getElementById('modalImage');
-const modalTitle = document.getElementById('modalTitle');
-const modalDesc = document.getElementById('modalDesc');
-const modalTime = document.getElementById('modalTime');
-const modalViews = document.getElementById('modalViews');
-const modalLikes = document.getElementById('modalLikes');
-const modalLikeBtn = document.getElementById('modalLikeBtn');
-const modalComments = document.getElementById('modalComments');
-const modalCommentForm = document.getElementById('modalCommentForm');
+// Modal refs (ของ modal เดิมใน index.html)
+const modal = document.querySelector('#postModal');
+const modalImg = modal.querySelector('#modalImage');
+const modalTitle = modal.querySelector('#modalTitle');
+const modalDesc = modal.querySelector('#modalDesc');
+const modalTime = modal.querySelector('#modalTime');
+const modalViews = modal.querySelector('#modalViews');
+const modalLikes = modal.querySelector('#modalLikes');
+const modalLikeBtn = modal.querySelector('#modalLikeBtn');
+const modalComments = modal.querySelector('#modalComments');
+const modalCommentForm = modal.querySelector('#modalCommentForm');
 
 let currentPostId = null;
+let timeInterval = null;
 
 /* Helpers */
 function timeAgo(iso){
+  if(!iso) return '';
   const now = new Date();
   const then = new Date(iso);
   const s = Math.floor((now - then)/1000);
@@ -28,12 +30,20 @@ function timeAgo(iso){
   return `${d} วันที่แล้ว`;
 }
 
+/* ========== Modal Functions ========== */
 function openModal(){ modal.setAttribute('aria-hidden','false'); }
-function closeModal(){ modal.setAttribute('aria-hidden','true'); }
-document.querySelectorAll('[data-close-modal]').forEach(el => el.addEventListener('click', closeModal));
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+function closeModal(){ 
+  modal.setAttribute('aria-hidden','true');
+  if(timeInterval) clearInterval(timeInterval);
+}
+document.querySelectorAll('[data-close-modal]').forEach(el=>{
+  el.addEventListener('click', closeModal);
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeModal();
+});
 
-/* Load Feed */
+/* ========== Load Feed ========== */
 fetch('/api/images')
 .then(res => res.json())
 .then(data => {
@@ -46,87 +56,37 @@ fetch('/api/images')
         <h3 class="card__title">${post.name}</h3>
         <p class="card__desc">${post.description || ''}</p>
         <div class="meta">
-          <span class="chip">⏱ ${timeAgo(post.created_at)}</span>
-          <span class="chip">👁 ${post.views} views</span>
-          <button class="btn-like" data-like="${post.id}">👍 <span>${post.likes}</span></button>
+          <span class="chip" id="time-${post.id}">⏱ ${timeAgo(post.created_at)}</span>
+          <span class="chip" id="views-${post.id}">👁 ${post.views} views</span>
           <button class="btn-like" data-open="${post.id}">🔍 View</button>
-        </div>
-        <div class="comment-section" id="comments-${post.id}">
-          <h4>Comments</h4>
-          <div class="comment-list"></div>
-          <form class="comment-form">
-            <input type="text" name="username" placeholder="Your name" required />
-            <input type="text" name="content" placeholder="Add a comment..." required />
-            <button type="submit">Post</button>
-          </form>
         </div>
       </div>
     `;
     grid.appendChild(card);
 
-    // comments init
-    loadComments(post.id);
-
-    // add comment
-    const form = card.querySelector('.comment-form');
-    form.addEventListener('submit', e=>{
-      e.preventDefault();
-      const username = form.username.value.trim();
-      const content = form.content.value.trim();
-      if(!username || !content) return;
-      fetch(`/api/comments/${post.id}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({username, content})
-      })
-      .then(r=>r.json())
-      .then(()=>{
-        form.reset();
-        loadComments(post.id);
-      });
-    });
-
-    // like on card
-    card.querySelector('[data-like]').addEventListener('click', e=>{
-      const id = e.currentTarget.getAttribute('data-like');
-      likePost(id).then(newLikes=>{
-        e.currentTarget.querySelector('span').textContent = newLikes;
-      });
-    });
-
-    // open modal (count view only here)
-    card.querySelector('[data-open]').addEventListener('click', ()=>{
-      openPost(post.id);
-    });
-
-    // also open when click image/title
-    card.querySelector('.card__image').addEventListener('click', ()=>openPost(post.id));
-    card.querySelector('.card__title').addEventListener('click', ()=>openPost(post.id));
+    // คลิก → เปิด popup (เปลี่ยนตรงนี้ถ้าอยากให้เปิด modal แทน)
+    card.querySelector('[data-open]').addEventListener('click', ()=>openPostPopup(post.id));
+    card.querySelector('.card__image').addEventListener('click', ()=>openPostPopup(post.id));
+    card.querySelector('.card__title').addEventListener('click', ()=>openPostPopup(post.id));
   });
 });
 
+/* ========== Modal (แบบเก่า) ========== */
 function loadComments(imageId){
   fetch(`/api/comments/${imageId}`)
   .then(res=>res.json())
   .then(list=>{
-    const box = document.querySelector(`#comments-${imageId} .comment-list`);
-    box.innerHTML = '';
+    modalComments.innerHTML = '';
     list.forEach(c=>{
       const div = document.createElement('div');
       div.className = 'comment';
       div.innerHTML = `<strong>${c.username}:</strong> ${c.content}`;
-      box.appendChild(div);
+      modalComments.appendChild(div);
     });
   });
 }
 
-function likePost(id){
-  return fetch(`/api/like/${id}`,{method:'POST'})
-    .then(res=>res.json())
-    .then(d=>d.likes);
-}
-
-function openPost(id){
+function openPostModal(id){
   fetch(`/api/image/${id}`)
     .then(res=>res.json())
     .then(post=>{
@@ -139,50 +99,135 @@ function openPost(id){
       modalViews.textContent = `👁 ${post.views} views`;
       modalLikes.textContent = post.likes;
 
-      // count view ONLY when modal opens
-      fetch(`/api/view/${id}`,{method:'POST'}).then(()=> {
-        // refresh views label
-        fetch(`/api/image/${id}`).then(r=>r.json()).then(p=>{
+      if(timeInterval) clearInterval(timeInterval);
+      timeInterval = setInterval(()=>{
+        modalTime.textContent = `⏱ ${timeAgo(post.created_at)}`;
+      },60000);
+
+      // count view
+      fetch(`/api/view/${id}`,{method:'POST'})
+        .then(()=>fetch(`/api/image/${id}`))
+        .then(r=>r.json())
+        .then(p=>{
           modalViews.textContent = `👁 ${p.views} views`;
+          const viewEl = document.getElementById(`views-${id}`);
+          if(viewEl) viewEl.textContent = `👁 ${p.views} views`;
         });
-      });
 
-      // load modal comments
-      fetch(`/api/comments/${id}`).then(r=>r.json()).then(list=>{
-        modalComments.innerHTML='';
-        list.forEach(c=>{
-          const div = document.createElement('div');
-          div.className = 'comment';
-          div.innerHTML = `<strong>${c.username}:</strong> ${c.content}`;
-          modalComments.appendChild(div);
-        });
-      });
+      loadComments(id);
 
-      // like inside modal
       modalLikeBtn.onclick = ()=>{
-        likePost(id).then(newLikes=>{
-          modalLikes.textContent = newLikes;
+        fetch(`/api/like/${id}`,{method:'POST'}).then(r=>r.json()).then(d=>{
+          modalLikes.textContent = d.likes;
         });
       };
 
-      // comment inside modal
       modalCommentForm.onsubmit = (e)=>{
         e.preventDefault();
         const username = modalCommentForm.username.value.trim();
         const content = modalCommentForm.content.value.trim();
         if(!username || !content) return;
-        fetch(`/api/comments/${id}`,{ 
+        fetch(`/api/comments/${id}`,{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body: JSON.stringify({username, content})
-        }).then(()=> {
+        }).then(()=>{
           modalCommentForm.reset();
-          // refresh both comment lists
           loadComments(id);
-          openPost(id); // re-pull modal data
         });
       };
 
       openModal();
     });
+}
+
+/* ========== Popup (ใหม่แบบ Facebook) ========== */
+function openPostPopup(id){
+  fetch(`/api/image/${id}`)
+    .then(res=>res.json())
+    .then(post=>{
+      const container = document.getElementById('popupContainer');
+      container.innerHTML = '';
+
+      const overlay = document.createElement('div');
+      overlay.className = 'popup-overlay';
+
+      const box = document.createElement('div');
+      box.className = 'popup-box';
+
+      const closeBtn = document.createElement('div');
+      closeBtn.className = 'popup-close';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.onclick = ()=> container.innerHTML = '';
+
+      const left = document.createElement('div');
+      left.className = 'popup-image';
+      left.innerHTML = `<img src="/images/${id}" alt="${post.name}">`;
+
+      const right = document.createElement('div');
+        right.className = 'popup-content';
+        right.innerHTML = `
+        <div class="popup-content-header">
+          <h2>${post.name}</h2>
+          <p class="muted">${post.description || ''}</p>
+          <div class="meta-row">
+            <span class="chip">⏱ ${timeAgo(post.created_at)}</span>
+            <span class="chip">👁 ${post.views} views</span>
+            <button class="chip like-btn">👍 <span>${post.likes}</span></button>
+          </div>
+        </div>
+        <div class="popup-comment-list" id="popupComments"></div>
+        <form class="popup-comment-form" id="popupCommentForm">
+          <input type="text" name="username" placeholder="Your name" required />
+          <input type="text" name="content" placeholder="Add a comment..." required />
+          <button type="submit">Post</button>
+        </form>
+      `;
+
+
+      box.appendChild(closeBtn);
+      box.appendChild(left);
+      box.appendChild(right);
+      overlay.appendChild(box);
+      container.appendChild(overlay);
+
+      loadPopupComments(id);
+
+      right.querySelector('.like-btn').onclick = ()=>{
+        fetch(`/api/like/${id}`,{method:'POST'}).then(r=>r.json()).then(d=>{
+          right.querySelector('.like-btn span').textContent = d.likes;
+        });
+      };
+
+      right.querySelector('#popupCommentForm').onsubmit = (e)=>{
+        e.preventDefault();
+        const username = e.target.username.value.trim();
+        const content = e.target.content.value.trim();
+        if(!username || !content) return;
+        fetch(`/api/comments/${id}`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username, content})
+        }).then(()=>{
+          e.target.reset();
+          loadPopupComments(id);
+        });
+      };
+    });
+}
+
+function loadPopupComments(imageId){
+  fetch(`/api/comments/${imageId}`)
+  .then(res=>res.json())
+  .then(list=>{
+    const listEl = document.getElementById('popupComments');
+    if(!listEl) return;
+    listEl.innerHTML = '';
+    list.forEach(c=>{
+      const div = document.createElement('div');
+      div.className = 'comment';
+      div.innerHTML = `<strong>${c.username}:</strong> ${c.content}`;
+      listEl.appendChild(div);
+    });
+  });
 }

@@ -55,7 +55,6 @@ async function deleteImage(id) {
 
 // ====== Modal Edit ======
 function openEditModal(id, name, description) {
-  // ลบ modal เดิมถ้ามี
   const old = document.querySelector('.modal-overlay');
   if (old) old.remove();
 

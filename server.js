@@ -39,7 +39,7 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.
 
 // API: ดึงข้อมูลภาพทั้งหมด
 app.get('/api/images', (req, res) => {
-  db.query('SELECT id, name, description, likes, views FROM images ORDER BY id DESC', (err, results) => {
+  db.query('SELECT id, name, description, likes, views, created_at FROM images ORDER BY id DESC', (err, results) => {
     if(err) return res.status(500).json({ error: err });
     res.json(results);
   });
@@ -52,7 +52,6 @@ app.get('/images/:id', (req, res) => {
     if(err) return res.status(500).send('DB error');
     if(results.length === 0) return res.status(404).send('Not found');
 
-    // ใช้ MIME จาก DB ถ้าไม่มี fallback เป็น image/png
     res.set('Content-Type', results[0].mime_type || 'image/png');
     res.send(results[0].image_data);
   });
@@ -70,7 +69,7 @@ app.get('/admin/api/list', (req, res) => {
 app.post('/admin/api/add', upload.single('image_file'), (req, res) => {
   const { name, description } = req.body;
   const imageData = req.file.buffer;
-  const mimeType = req.file.mimetype; // เก็บชนิดไฟล์ด้วย
+  const mimeType = req.file.mimetype;
 
   db.query(
     'INSERT INTO images (name, description, image_data, mime_type, likes, views) VALUES (?, ?, ?, ?, 0, 0)',
@@ -88,7 +87,6 @@ app.post('/admin/api/edit/:id', upload.single('image_file'), (req, res) => {
   const id = req.params.id;
 
   if (req.file) {
-    // ถ้ามีการอัปโหลดรูปใหม่
     const imageData = req.file.buffer;
     const mimeType = req.file.mimetype;
     db.query(
@@ -100,7 +98,6 @@ app.post('/admin/api/edit/:id', upload.single('image_file'), (req, res) => {
       }
     );
   } else {
-    // แก้ไขเฉพาะข้อความ
     db.query(
       'UPDATE images SET name=?, description=? WHERE id=?',
       [name, description, id],
@@ -121,7 +118,7 @@ app.delete('/admin/api/delete/:id', (req, res) => {
   });
 });
 
-// Comment API
+// ================= Comments =================
 app.get('/api/comments/:imageId', (req, res) => {
   const imageId = req.params.imageId;
   db.query('SELECT * FROM comments WHERE image_id=? ORDER BY created_at DESC', [imageId], (err, results) => {
@@ -143,6 +140,8 @@ app.post('/api/comments/:imageId', (req, res) => {
   );
 });
 
+// ================= Likes & Views =================
+
 // Like API
 app.post('/api/like/:id', (req, res) => {
   const id = req.params.id;
@@ -159,13 +158,27 @@ app.post('/api/like/:id', (req, res) => {
 app.post('/api/view/:id', (req, res) => {
   const id = req.params.id;
   db.query('UPDATE images SET views = views + 1 WHERE id=?', [id], err => {
-    if(err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err });
     db.query('SELECT views FROM images WHERE id=?', [id], (err, results) => {
-      if(err) return res.status(500).json({ error: err });
+      if (err) return res.status(500).json({ error: err });
       res.json({ views: results[0].views });
     });
   });
 });
 
-// Start server
+// ================= Single Image =================
+app.get('/api/image/:id', (req, res) => {
+  const id = req.params.id;
+  db.query(
+    'SELECT id, name, description, created_at, views, likes FROM images WHERE id = ?',
+    [id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err });
+      if (!results.length) return res.status(404).json({ error: 'Not found' });
+      res.json(results[0]);
+    }
+  );
+});
+
+// ================= Start Server =================
 app.listen(port, '0.0.0.0', () => console.log(`Server running on port ${port}`));

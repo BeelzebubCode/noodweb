@@ -21,15 +21,17 @@
     <section class="feed-grid" id="images"></section>
   </main>
 
-  <!-- Modal: View Post -->
+  <!-- Modal หลัก: ใช้แสดงรูป + title + desc + คอมเมนต์ -->
   <div class="modal" id="postModal" aria-hidden="true">
     <div class="modal__backdrop" data-close-modal></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <button class="modal__close" title="Close" data-close-modal>&times;</button>
-      <div class="modal__body">
+      <div class="modal__body modal__split">
+        <!-- ซ้าย: รูป -->
         <div class="modal__image">
           <img id="modalImage" alt="">
         </div>
+        <!-- ขวา: เนื้อหา -->
         <div class="modal__content">
           <h2 id="modalTitle"></h2>
           <p id="modalDesc" class="muted"></p>
@@ -37,7 +39,9 @@
           <div class="meta-row">
             <span id="modalTime" class="chip"></span>
             <span id="modalViews" class="chip"></span>
-            <button id="modalLikeBtn" class="chip like-btn">👍 <span id="modalLikes">0</span></button>
+            <button id="modalLikeBtn" class="chip like-btn">
+              👍 <span id="modalLikes">0</span>
+            </button>
           </div>
 
           <div class="comment-section">
@@ -53,6 +57,16 @@
       </div>
     </div>
   </div>
+
+  <!-- PopupContainer สำหรับ detail แบบเต็ม (ถ้าอยากใช้เพิ่ม) -->
+  <div id="popupContainer"></div>
+
+  <!-- Duplicate Modal เก็บไว้กันหาย -->
+  <!--
+  <div class="modal" id="postModal" aria-hidden="true">
+    ...
+  </div>
+  -->
 
   <script src="/js/main.js"></script>
 </body>
